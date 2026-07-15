@@ -13,6 +13,16 @@ def test_is_hosted_reads_env(monkeypatch):
         assert deploy.is_hosted() is False
 
 
+def test_is_hosted_reads_streamlit_secret(monkeypatch):
+    # Streamlit Community Cloud exposes secrets via st.secrets, not env vars
+    monkeypatch.delenv("EQUIPOSE_HOSTED", raising=False)
+    import streamlit as st
+    monkeypatch.setattr(st, "secrets", {"EQUIPOSE_HOSTED": "1"}, raising=False)
+    assert deploy.is_hosted() is True
+    monkeypatch.setattr(st, "secrets", {"EQUIPOSE_HOSTED": "0"}, raising=False)
+    assert deploy.is_hosted() is False
+
+
 def test_missing_models_reports_absent(tmp_path, monkeypatch):
     monkeypatch.setattr(deploy, "_MODELS_DIR", tmp_path)
     assert set(deploy.missing_models()) == set(deploy._REQUIRED)

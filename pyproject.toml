@@ -12,7 +12,7 @@ license = { text = "MIT" }
 authors = [{ name = "ggmr" }]
 dependencies = [
     "mediapipe>=0.10.18",
-    "opencv-contrib-python-headless>=4.10",  # headless: no libGL/glib apt deps (server-friendly)
+    "opencv-contrib-python>=4.10",  # matches mediapipe's own opencv dep (avoids a dual-cv2 install)
     "numpy>=1.26",
     "pydantic>=2.7",
     "pyyaml>=6.0",

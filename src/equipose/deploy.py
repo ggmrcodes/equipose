@@ -32,8 +32,19 @@ _REQUIRED = ("pose_landmarker_full.task", "selfie_segmenter.tflite")
 
 
 def is_hosted() -> bool:
-    """True when running as a hosted demo (env ``EQUIPOSE_HOSTED`` set to a truthy value)."""
-    return os.environ.get("EQUIPOSE_HOSTED", "").strip().lower() not in ("", "0", "false", "no")
+    """True when running as a hosted demo (``EQUIPOSE_HOSTED`` truthy).
+
+    Reads the OS env var first, then Streamlit secrets — Streamlit Community Cloud
+    exposes its Secrets via ``st.secrets``, NOT as environment variables, so a
+    secrets-only value must still flip the demo footer / backend."""
+    val = os.environ.get("EQUIPOSE_HOSTED", "")
+    if not val:
+        try:
+            import streamlit as st
+            val = str(st.secrets.get("EQUIPOSE_HOSTED", ""))
+        except Exception:
+            val = ""
+    return val.strip().lower() not in ("", "0", "false", "no")
 
 
 def missing_models(names: tuple[str, ...] = _REQUIRED) -> list[str]:
