@@ -1,0 +1,32 @@
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+
+# Models are downloaded on setup, not committed
+models/*.task
+models/*.onnx
+models/*.tflite
+
+# Local clinical data — NEVER commit (pediatric medical data)
+data/
+*.sqlite
+*.db
+exports/
+*.mp4
+*.mov
+
+# Loose working images at the repo root (incl. identifiable child photos + app
+# screenshots) — NOT part of the codebase, must never reach the remote.
+/S__*.jpg
+/ss_equipose*
+/*.jpeg
+/rounded_*.jpg
+
+# The golden test fixture is a real child's photo. Held OUT of the remote for
+# privacy (pediatric data → hard to reverse once in git history). The golden-frame
+# regression test needs it LOCALLY; it stays on disk. Add it back only with explicit
+# consent to publish:   git add -f tests/fixtures/golden_S__83238932.jpg
+tests/fixtures/golden_S__83238932.jpg

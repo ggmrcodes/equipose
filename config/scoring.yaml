@@ -1,0 +1,41 @@
+# Session scoring configuration.
+#
+# ⚠️  PLACEHOLDER weights and band cutoffs — tune at the pilot.
+#
+# Per-metric sub-score = graded_score * 100 — a smooth proximity-to-ideal (1.0 at
+# the ideal, ~0.6 at the acceptable-range edge, decaying for gross deviations), so
+# a merely-acceptable joint scores below a near-ideal one instead of both reading
+# 100. Overall score = a weakest-link blend: halfway between the weighted mean of
+# sub-scores and the single worst joint, over metrics with enough coverage — so one
+# poor joint is not averaged away. PRIMARY metrics are weighted heavily in the mean;
+# best-effort (pelvis/lower) contribute only when both coverage and mean confidence
+# clear their gates.
+#
+# display_only metrics are shown as summaries (table + body-chart) but are NOT
+# counted in the overall score. The two composites are derived from individual
+# metrics that are already scored on their own, so scoring them too would
+# double-count and let one summary dominate.
+
+green_min: 80.0      # overall_score >= 80 -> green
+yellow_min: 60.0     # overall_score >= 60 -> yellow, else red
+
+min_coverage: 0.30                 # a metric needs >=30% valid frames to count
+best_effort_min_confidence: 0.50   # best-effort metrics also need this mean conf
+
+display_only:
+  - symmetry_score
+
+weights:
+  # Front (coronal)
+  head_tilt: 1.0
+  shoulder_tilt: 1.0
+  trunk_lateral_lean: 1.5
+  midline_deviation: 1.5
+  symmetry_score: 2.0
+  pelvic_obliquity: 0.5
+  # Side (sagittal)
+  forward_trunk_lean: 1.5
+  neck_forward_angle: 1.0
+  hip_flexion: 0.5
+  knee_angle: 0.5
+  back_roundness: 1.0   # thoracic rounding — a primary concern; PLACEHOLDER threshold

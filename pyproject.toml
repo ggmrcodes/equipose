@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "equipose"
+version = "0.1.0"
+description = "AI vision posture monitoring for pediatric hippotherapy (cerebral palsy)"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+license = { text = "MIT" }
+authors = [{ name = "ggmr" }]
+dependencies = [
+    "mediapipe>=0.10.18",
+    "opencv-contrib-python>=4.10",
+    "numpy>=1.26",
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
+    "streamlit>=1.36",
+    "pandas>=2.2",
+    "matplotlib>=3.8",
+    "reportlab>=4.1",
+    "onnxruntime>=1.18",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+equipose = "equipose.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

@@ -1,0 +1,5 @@
+# Streamlit Community Cloud installs this. `-e .` installs the equipose package
+# (src/ layout) plus its pinned runtime deps from pyproject.toml.
+# System libs for opencv/mediapipe come from packages.txt; pin Python 3.11
+# (mediapipe has no 3.13 wheels) via .python-version / the deploy UI.
+-e .

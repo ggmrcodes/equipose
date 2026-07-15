@@ -1,0 +1,86 @@
+# Acceptable posture ranges per metric.
+#
+# ⚠️  ALL VALUES ARE PROVISIONAL — not yet validated against clinical data.
+# They MUST be tuned at the pilot with clinician input and goniometer
+# comparison before any clinical use.
+#
+# Each metric carries a `basis` note describing WHERE its range comes from:
+#   "Principled ..."  = the target is geometrically/clinically obvious (level,
+#                       centered, or upright = 0); only the tolerance WIDTH is a
+#                       calibration choice.
+#   "PLACEHOLDER ..." = the numbers genuinely need clinical literature + pilot
+#                       data; treat as a guess until then.
+#
+# Units:
+#   deg              = degrees
+#   frac_shoulder_w  = fraction of shoulder width (scale-invariant)
+#   score            = composite 0-100 (higher is better)
+#
+# reliability:
+#   primary     = reliably visible above the saddle (head/shoulders/trunk)
+#   best_effort = pelvis/hip/knee, occluded on the pony; computed only when
+#                 landmark confidence is high, else skipped + flagged.
+
+metrics:
+  # ---- Front view (coronal plane) ----
+  head_tilt:
+    acceptable: [-5.0, 5.0]
+    unit: deg
+    reliability: primary
+    basis: "Principled: a level head reads 0 deg of ear-to-ear tilt; +/-5 deg tolerance is provisional."
+  shoulder_tilt:
+    acceptable: [-5.0, 5.0]
+    unit: deg
+    reliability: primary
+    basis: "Principled: level shoulders = 0 deg; +/-5 deg tolerance is provisional."
+  trunk_lateral_lean:
+    acceptable: [-8.0, 8.0]
+    unit: deg
+    reliability: primary
+    basis: "Principled: an upright trunk is 0 deg from vertical; +/-8 deg tolerance is provisional."
+  midline_deviation:
+    acceptable: [0.0, 0.10]
+    unit: frac_shoulder_w
+    reliability: primary
+    lower_is_better: true   # 0 (head over the shoulder-hip axis) is ideal; grading peaks there
+    basis: "Principled: the head sitting over the shoulder-hip axis = 0; 0.10 of shoulder width is a provisional tolerance."
+  pelvic_obliquity:
+    acceptable: [-6.0, 6.0]
+    unit: deg
+    reliability: best_effort
+    basis: "Principled: a level pelvis = 0 deg; +/-6 deg tolerance is provisional. Best-effort (saddle occlusion)."
+  symmetry_score:
+    acceptable: [80.0, 100.0]
+    unit: score
+    reliability: primary
+    higher_is_better: true
+    basis: "Composite (100 = level & centered): mean of normalized deviations of head tilt, shoulder tilt, and midline, each scaled to 0-1 so units are consistent and none dominates. Component scales and the 80 cutoff are provisional."
+
+  # ---- Side view (sagittal plane) ----
+  forward_trunk_lean:
+    acceptable: [-10.0, 15.0]
+    unit: deg
+    reliability: primary
+    basis: "PLACEHOLDER: a small forward lean is expected on a moving horse; the asymmetric band needs clinical literature."
+  neck_forward_angle:
+    acceptable: [150.0, 180.0]
+    unit: deg
+    reliability: primary
+    higher_is_better: true   # 180 deg (head stacked over the trunk) is ideal; grading peaks there
+    basis: "PLACEHOLDER: 180 deg = head stacked over the trunk; forward-head lowers it. Acceptable floor needs literature."
+  hip_flexion:
+    acceptable: [110.0, 160.0]
+    unit: deg
+    reliability: best_effort
+    basis: "PLACEHOLDER (riding-specific): the legs hang down the horse's barrel, so the hip sits far more open than chair-sitting (~90 deg). Sample geometry (thigh 40-48 deg below horizontal, near-upright trunk) gives ~119-147 deg. Provisional riding band, still needs pilot. Best-effort (occlusion)."
+  knee_angle:
+    acceptable: [80.0, 130.0]
+    unit: deg
+    reliability: best_effort
+    basis: "PLACEHOLDER: depends on stirrup length; needs clinical sourcing. Best-effort (occlusion)."
+  back_roundness:
+    acceptable: [0.0, 0.10]
+    unit: frac_back
+    reliability: primary
+    lower_is_better: true    # 0 = straight back; grading peaks there, higher = rounded
+    basis: "PLACEHOLDER: bow of the back silhouette off its own chord / chord length (0 = straight, higher = rounded). Measured from segmentation, NOT skeleton joints, so it sees thoracic rounding the ear-shoulder-hip angle cannot. Threshold from a 3-photo spike (straight <=0.09, rounded >=0.11); needs pilot validation."
