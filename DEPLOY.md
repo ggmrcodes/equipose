@@ -20,11 +20,14 @@ Prereqs: the repo is on GitHub, and you have a Streamlit Community Cloud account
 
 What happens on first boot:
 - `requirements.txt` (`-e .`) installs equipose + its pinned deps. **mediapipe pulls
-  in non-headless `opencv-contrib-python`**, whose `import cv2` needs `libGL.so.1`, so
-  `packages.txt` installs **`libgl1`** (only). Do NOT add `libglib2.0-0` — it selects a
-  bullseye version on Cloud's Debian **trixie** base and breaks the apt step
-  (`libffi7`/`libpcre3` unmet). If `import cv2` fails on a *different* lib, read the
-  exact name from Manage-app logs and add just that one.
+  in non-headless `opencv-contrib-python`**, whose `import cv2` needs `libGL.so.1` **and**
+  `libgthread-2.0.so.0`, so `packages.txt` installs **`libgl1`** + **`libglib2.0-0t64`**.
+  Note the **`t64`** suffix: Cloud's base is Debian **trixie**, where the plain
+  `libglib2.0-0` resolves to an old bullseye build (`libffi7`/`libpcre3` unmet) and
+  breaks apt — `libglib2.0-0t64` is the trixie-native package that provides
+  `libgthread-2.0.so.0`.
+- **After changing `packages.txt`, Reboot the app** (Manage → Reboot) — Cloud often
+  skips re-running apt on a plain push.
 - The app **downloads the models on first run** (`equipose.deploy.ensure_models` — the
   ~9 MB pose model + ~250 KB segmenter, from Google's public MediaPipe storage), because
   `models/` is gitignored. Expect a slower first cold start; a spinner shows while it fetches.
