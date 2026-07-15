@@ -114,16 +114,20 @@ section[data-testid="stSidebar"] > div {{ padding-top:2.4rem; }}
   letter-spacing:-0.03em; line-height:1.05; margin:0 0 .4rem; }}
 .eq-lead {{ color:var(--soft); font-size:1.02rem; margin:0 0 .2rem; max-width:62ch; line-height:1.5; }}
 
-/* ---- buttons (macOS push-button) ---- */
-.stButton > button, .stDownloadButton > button {{
+/* ---- buttons (macOS push-button) — cover regular, download AND form-submit ---- */
+.stButton > button, .stDownloadButton > button, .stFormSubmitButton > button {{
   border-radius:var(--radius-sm); border:1px solid var(--line); background:var(--panel-hi);
   color:var(--text); font-weight:500; padding:.5rem 1.05rem;
   transition:transform .06s ease, background .12s, border-color .12s; }}
-.stButton > button:hover, .stDownloadButton > button:hover {{ background:#2E251F; }}
-.stButton > button:active {{ transform:translateY(1px); }}
-.stButton > button[kind="primary"], button[data-testid="stBaseButton-primary"] {{
-  background:var(--accent); border-color:var(--accent); color:var(--btn-ink); font-weight:600; }}
-.stButton > button[kind="primary"]:hover {{ background:var(--accent-press); border-color:var(--accent-press); }}
+.stButton > button:hover, .stDownloadButton > button:hover, .stFormSubmitButton > button:hover {{ background:#2E251F; }}
+.stButton > button:active, .stFormSubmitButton > button:active {{ transform:translateY(1px); }}
+/* primary — incl. form-submit primary (Streamlit uses kind="primaryFormSubmit") so the
+   dark bone-ink text applies and the label isn't washed out on the bone fill. */
+button[kind="primary"], button[kind="primaryFormSubmit"],
+button[data-testid="stBaseButton-primary"], button[data-testid="stBaseButton-primaryFormSubmit"] {{
+  background:var(--accent); border-color:var(--accent); color:var(--btn-ink) !important; font-weight:600; }}
+button[kind="primary"]:hover, button[kind="primaryFormSubmit"]:hover {{
+  background:var(--accent-press); border-color:var(--accent-press); }}
 [data-testid="stWidgetLabel"] p {{ font-size:.82rem; color:var(--soft); font-weight:500; }}
 
 /* inputs */

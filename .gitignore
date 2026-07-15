@@ -30,3 +30,4 @@ exports/
 # regression test needs it LOCALLY; it stays on disk. Add it back only with explicit
 # consent to publish:   git add -f tests/fixtures/golden_S__83238932.jpg
 tests/fixtures/golden_S__83238932.jpg
+.gstack/
