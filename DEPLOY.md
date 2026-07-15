@@ -19,8 +19,10 @@ Prereqs: the repo is on GitHub, and you have a Streamlit Community Cloud account
 5. Deploy.
 
 What happens on first boot:
-- `requirements.txt` (`-e .`) installs equipose + its pinned deps; `packages.txt`
-  (`libgl1`, `libglib2.0-0`) provides the system libs opencv/mediapipe need.
+- `requirements.txt` (`-e .`) installs equipose + its pinned deps. It uses
+  **`opencv-contrib-python-headless`**, so there are **no apt/system deps** — no
+  `packages.txt` (a `libglib2.0-0` apt install breaks on Streamlit Cloud's Debian
+  trixie base image).
 - The app **downloads the models on first run** (`equipose.deploy.ensure_models` — the
   ~9 MB pose model + ~250 KB segmenter, from Google's public MediaPipe storage), because
   `models/` is gitignored. Expect a slower first cold start; a spinner shows while it fetches.
