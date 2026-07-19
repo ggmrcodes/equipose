@@ -1,13 +1,13 @@
-# equipose dashboard theme — "graphite instrument" (Apple HIG)
-# Dark warm-charcoal (not cold blue-black). Single warm-bone emphasis (no pink).
+# equipose dashboard theme — "graphite instrument, on paper" (Apple HIG)
+# Warm-light clinical: cool paper surface, slate-blue emphasis, navy ink.
 # JetBrains Mono self-hosted via static serving (offline, no CDN); SF is OS-provided.
 # See .impeccable.md / CLAUDE.md for the design context.
 [theme]
-base = "dark"
-primaryColor = "#FBF5EF"             # warm bone — the one emphasis tone
-backgroundColor = "#17120F"          # warm near-black charcoal
-secondaryBackgroundColor = "#1E1814" # warm panel (matches CSS --panel)
-textColor = "#F2E9E2"                # warm off-white
+base = "light"
+primaryColor = "#415A69"             # slate-blue — the one emphasis tone
+backgroundColor = "#E7EDEF"          # cool light ground
+secondaryBackgroundColor = "#FFFFFF" # white card surface (matches CSS --panel)
+textColor = "#0C1013"                # near-black navy ink
 font = "sans serif"
 
 [server]

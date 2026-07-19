@@ -58,6 +58,16 @@ class Arc:
 
 
 @dataclass
+class Curve:
+    """A quadratic Bézier — the back-rounding bow drawn posterior to the trunk chord."""
+    p1: Point
+    c: Point       # control point
+    p2: Point
+    color: str
+    width: float
+
+
+@dataclass
 class Label:
     x: float
     y: float
@@ -72,6 +82,7 @@ class OverlaySpec:
     joints: list[Joint] = field(default_factory=list)
     refs: list[Ref] = field(default_factory=list)
     arcs: list[Arc] = field(default_factory=list)
+    curves: list[Curve] = field(default_factory=list)
     labels: list[Label] = field(default_factory=list)
 
 
@@ -226,6 +237,34 @@ def build_overlay_spec(landmarks: list[Landmark], view: str, metrics, layers,
             ly = v[1] + (arc_r + fs * 1.1) * math.sin(bis)
             spec.labels.append(Label(lx, ly, f"{abs(value):.0f}°", color, fs))
 
+    # --- back rounding (segmentation-derived) — a schematic bow posterior to the
+    #     shoulder->hip chord, drawn to the measured depth so a rounded back visibly
+    #     bulges off the straight reference (side view only). ---
+    if (view == "side" and side is not None and drawable("back_roundness")
+            and f"{side}_shoulder" in Pc and f"{side}_hip" in Pc):
+        from equipose.angles_side import facing_direction
+        Sp, Hp = Pc[f"{side}_shoulder"], Pc[f"{side}_hip"]
+        val = metric("back_roundness").mean
+        b_col = _col(_ms(metric("back_roundness")))
+        dxv, dyv = Hp[0] - Sp[0], Hp[1] - Sp[1]
+        chord = math.hypot(dxv, dyv) or 1.0
+        nxv, nyv = -dyv / chord, dxv / chord              # unit perpendicular to the chord
+        posterior_right = facing_direction(landmarks, vis_threshold) == "left"
+        if (nxv > 0) != posterior_right:                  # orient the normal to the back side
+            nxv, nyv = -nxv, -nyv
+        mid = _mid(Sp, Hp)
+        bow = val * chord                                 # apex depth = fraction x chord length
+        apex = (mid[0] + nxv * bow, mid[1] + nyv * bow)
+        ctrl = (mid[0] + nxv * 2 * bow, mid[1] + nyv * 2 * bow)  # quad ctrl -> curve apex ~ bow
+        if "reference" in layers:
+            spec.refs.append(Ref(Sp, Hp, glyphs.SOFT, ref_w))    # straight-back reference chord
+        if "arcs" in layers:
+            spec.curves.append(Curve(Sp, ctrl, Hp, b_col, arc_w))
+            spec.joints.append(Joint(apex, b_col, joint_r))
+        if "labels" in layers:
+            spec.labels.append(Label(apex[0] + nxv * fs * 1.4, apex[1] + nyv * fs * 1.4,
+                                     "back rounding", b_col, fs * 0.82))
+
     # --- reference lines (anchored on confident joints, spanning the figure) ---
     if "reference" in layers and P:
         xs = [p[0] for p in P.values()]
@@ -305,6 +344,12 @@ def overlay_svg(spec: OverlaySpec, w: int, h: int, image_data_uri: str) -> str:
                  f'fill="none" stroke-linecap="round"/>')  # dark halo for legibility
         p.append(f'<path d="{d}" stroke="{a.color}" stroke-width="{a.width:.1f}" '
                  f'fill="none" stroke-linecap="round"/>')
+    for c in spec.curves:
+        d = f"M {c.p1[0]:.1f} {c.p1[1]:.1f} Q {c.c[0]:.1f} {c.c[1]:.1f} {c.p2[0]:.1f} {c.p2[1]:.1f}"
+        p.append(f'<path d="{d}" stroke="rgba(20,16,12,0.6)" stroke-width="{c.width + 3:.1f}" '
+                 f'fill="none" stroke-linecap="round"/>')  # dark halo for legibility
+        p.append(f'<path d="{d}" stroke="{c.color}" stroke-width="{c.width:.1f}" '
+                 f'fill="none" stroke-linecap="round"/>')
     for j in spec.joints:
         p.append(f'<circle cx="{j.p[0]:.1f}" cy="{j.p[1]:.1f}" r="{j.r:.1f}" fill="{j.color}"/>')
     for lb in spec.labels:
@@ -328,6 +373,7 @@ def _bgr(hex_color: str) -> tuple[int, int, int]:
 
 def overlay_raster(img_bgr, spec: OverlaySpec):
     import cv2
+    import numpy as np
 
     out = img_bgr.copy()
     for r in spec.refs:
@@ -344,6 +390,13 @@ def overlay_raster(img_bgr, spec: OverlaySpec):
                     lo, hi, (16, 12, 20), max(2, int(a.width)) + 3, cv2.LINE_AA)  # dark halo
         cv2.ellipse(out, (int(a.cx), int(a.cy)), (int(a.r), int(a.r)), 0,
                     lo, hi, _bgr(a.color), max(2, int(a.width)), cv2.LINE_AA)
+    for c in spec.curves:
+        ts = [i / 24.0 for i in range(25)]
+        pts = np.array([[int((1 - t) ** 2 * c.p1[0] + 2 * (1 - t) * t * c.c[0] + t * t * c.p2[0]),
+                         int((1 - t) ** 2 * c.p1[1] + 2 * (1 - t) * t * c.c[1] + t * t * c.p2[1])]
+                        for t in ts], dtype=np.int32)
+        cv2.polylines(out, [pts], False, (16, 12, 20), max(2, int(c.width)) + 3, cv2.LINE_AA)  # halo
+        cv2.polylines(out, [pts], False, _bgr(c.color), max(2, int(c.width)), cv2.LINE_AA)
     for j in spec.joints:
         cv2.circle(out, (int(j.p[0]), int(j.p[1])), max(2, int(j.r)), _bgr(j.color), -1, cv2.LINE_AA)
     for lb in spec.labels:

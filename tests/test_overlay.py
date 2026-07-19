@@ -124,3 +124,40 @@ def test_overlay_raster_returns_same_shape():
     img = np.zeros((300, 240, 3), dtype=np.uint8)
     out = overlay.overlay_raster(img, spec)
     assert out.shape == (300, 240, 3)
+
+
+def _side_metrics_with_back(val=0.19, pct=0.0):
+    ms = _side_metrics()
+    ms.append(M("back_roundness", "primary", val, pct, unit="frac"))
+    return ms
+
+
+def _bow_depth(c):
+    import math
+    mx, my = (c.p1[0] + c.p2[0]) / 2, (c.p1[1] + c.p2[1]) / 2
+    return math.hypot(c.c[0] - mx, c.c[1] - my)
+
+
+def test_back_roundness_draws_bow_with_depth_scaled_to_value():
+    deep = overlay.build_overlay_spec(upright_side_landmarks(), "side",
+                                      _side_metrics_with_back(0.19), ALL, 240, 300)
+    assert len(deep.curves) == 1
+    assert any(lb.text == "back rounding" for lb in deep.labels)
+    # a rounder back bows deeper off the chord than a nearly straight one
+    shallow = overlay.build_overlay_spec(upright_side_landmarks(), "side",
+                                         _side_metrics_with_back(0.03), ALL, 240, 300)
+    assert _bow_depth(deep.curves[0]) > _bow_depth(shallow.curves[0])
+
+
+def test_back_roundness_bow_is_in_arcs_layer_and_side_only():
+    lms = upright_side_landmarks()
+    off = overlay.build_overlay_spec(lms, "side", _side_metrics_with_back(), {"skeleton"}, 240, 300)
+    assert off.curves == []                       # bow rides the 'arcs' layer toggle
+    front = overlay.build_overlay_spec(upright_front_landmarks(), "front",
+                                       _front_metrics(), ALL, 240, 300)
+    assert front.curves == []                     # never drawn on the front view
+
+
+def test_back_roundness_absent_when_not_measured():
+    spec = overlay.build_overlay_spec(upright_side_landmarks(), "side", _side_metrics(), ALL, 240, 300)
+    assert spec.curves == []                      # no back_roundness metric -> no bow

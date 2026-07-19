@@ -216,7 +216,8 @@ def _run_video(store, path, view, bbox, backend_name, pid) -> None:
 
 # ---- step 3: read ---------------------------------------------------------
 def _render_goniometer(res, store: Store) -> None:
-    """Digital-goniometer overlay for a photo result, with live layer toggles."""
+    """Full-width annotated photo with live overlay toggles + save/download actions.
+    The score/status now lead the screen in the summary hero, so this is evidence."""
     import base64
 
     import cv2
@@ -229,15 +230,17 @@ def _render_goniometer(res, store: Store) -> None:
     raw, landmarks = res["image_bgr"], res["landmarks"]
     h, w = raw.shape[:2]
 
+    st.markdown('<div class="eq-eyebrow" style="margin:.1rem 0 .1rem">Overlays · annotated photo</div>',
+                unsafe_allow_html=True)
     t = st.columns(4)
     layers = set()
-    if t[0].checkbox("Angle arcs", True):
+    if t[0].toggle("Angle arcs", True):
         layers.add("arcs")
-    if t[1].checkbox("Reference lines", True):
+    if t[1].toggle("Reference lines", True):
         layers.add("reference")
-    if t[2].checkbox("Skeleton", True):
+    if t[2].toggle("Skeleton", True):
         layers.add("skeleton")
-    if t[3].checkbox("Labels", True):
+    if t[3].toggle("Labels", True):
         layers.add("labels")
 
     spec = overlay.build_overlay_spec(landmarks, view, report.metrics, layers, w, h,
@@ -248,28 +251,26 @@ def _render_goniometer(res, store: Store) -> None:
     ok, dbuf = cv2.imencode(".png", disp)
     uri = ("data:image/png;base64," + base64.b64encode(dbuf.tobytes()).decode()) if ok else ""
 
-    left, right = st.columns([3, 2], gap="large")
-    with left:
-        st.markdown(overlay.overlay_svg(spec, w, h, uri), unsafe_allow_html=True)
-    with right:
-        ui.score_readout(report.overall_score, report.band, res["kind"])
-        st.write("")
-        # save this snapshot to the patient's timeline
-        sid = f"{report.patient_id}-photo-{report.captured_at}"
-        if st.button("Save to patient record", type="primary"):
-            store.save_report(report.model_copy(update={"session_id": sid}), kind="snapshot")
-            st.session_state.eq_saved = report.captured_at
-            st.success("Saved to patient record.")
-        if st.session_state.get("eq_saved") == report.captured_at:
-            if st.button("View progress"):
-                st.session_state.eq_mode = "review"
-                st.rerun()
-        st.write("")
-        raster = overlay.overlay_raster(blur_faces(raw, landmarks), spec)
-        ok2, rbuf = cv2.imencode(".png", raster)
-        if ok2:
-            st.download_button("Download annotated (face-blurred)", data=rbuf.tobytes(),
-                               file_name=f"posture_{view}.png", mime="image/png")
+    # full-width evidence photo
+    st.markdown(overlay.overlay_svg(spec, w, h, uri), unsafe_allow_html=True)
+    st.write("")
+
+    # actions row
+    sid = f"{report.patient_id}-photo-{report.captured_at}"
+    a, b = st.columns([1, 1])
+    if a.button("Save to patient record", type="primary"):
+        store.save_report(report.model_copy(update={"session_id": sid}), kind="snapshot")
+        st.session_state.eq_saved = report.captured_at
+        st.success("Saved to patient record.")
+    raster = overlay.overlay_raster(blur_faces(raw, landmarks), spec)
+    ok2, rbuf = cv2.imencode(".png", raster)
+    if ok2:
+        b.download_button("Download annotated (face-blurred)", data=rbuf.tobytes(),
+                          file_name=f"posture_{view}.png", mime="image/png")
+    if st.session_state.get("eq_saved") == report.captured_at:
+        if st.button("View progress"):
+            st.session_state.eq_mode = "review"
+            st.rerun()
 
 
 def _step_read(store: Store) -> None:
@@ -285,12 +286,22 @@ def _step_read(store: Store) -> None:
     ui.section("The reading", eyebrow=f"Step 3 · Read · {res['view']} view",
                lead=f"{res['kind']} for patient {report.patient_id}.")
 
+    scoring = load_scoring()
+    # baseline: the child's own earliest prior session for this view (not a cohort avg)
+    prior = [s for s in store.list_sessions(report.patient_id)
+             if s["view"] == report.view and s["session_id"] != report.session_id]
+    baseline = prior[0]["overall_score"] if prior else None
+
+    # answer-first summary hero: score dial + status + plain-language 'why' + position scale
+    why = ui.reading_why(report.metrics, scoring)
+    ui.reading_hero(report.overall_score, report.band, why, scoring, baseline, kind=res["kind"])
+    st.write("")
+
+    # big annotated evidence photo (+ overlay toggles + actions); video has no photo
     if res["image_bgr"] is not None:
         _render_goniometer(res, store)
-    else:
-        ui.score_readout(report.overall_score, report.band, res["kind"])
+    st.write("")
 
-    scoring = load_scoring()
     with st.expander("Why this score?"):
         ui.score_breakdown(report.metrics, scoring, report.overall_score)
 
@@ -302,9 +313,11 @@ def _step_read(store: Store) -> None:
     if res["view"] == "side" and res.get("landmarks"):
         from equipose.angles_side import facing_direction
         face_left = facing_direction(res["landmarks"]) == "left"
-    ui.posture_panel(res["view"], report.metrics, face_left=face_left, scoring=scoring)
+    thresholds = load_thresholds()
+    ui.posture_panel(res["view"], report.metrics, face_left=face_left, scoring=scoring,
+                     thresholds=thresholds)
     st.write("")
-    ui.metrics_table(report.metrics, load_thresholds(), scoring=scoring)
+    ui.metrics_table(report.metrics, thresholds, scoring=scoring)
     st.write("")
     ui.disclaimer(_DISCLAIMER)
 

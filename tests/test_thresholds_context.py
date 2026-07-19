@@ -13,6 +13,13 @@ def test_format_range_variants():
     assert th.format_range("neck_forward_angle") == "≥ 150°"  # higher-better (180 = ideal)
 
 
+def test_metric_threshold_ideal_target():
+    th = load_thresholds()
+    assert th.metrics["head_tilt"].ideal == 0.0             # symmetric [-5,5] -> centre
+    assert th.metrics["neck_forward_angle"].ideal == 180.0  # higher_is_better -> hi
+    assert th.metrics["midline_deviation"].ideal == 0.0     # lower_is_better -> lo
+
+
 def test_every_metric_has_a_basis():
     th = load_thresholds()
     for name in th.names():

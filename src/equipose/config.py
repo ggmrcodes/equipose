@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict
 _CONFIG_DIR = Path(__file__).resolve().parents[2] / "config"
 
 
-_UNIT_SUFFIX = {"deg": "°", "frac_shoulder_w": " w", "frac_back": " b", "score": ""}
+_UNIT_SUFFIX = {"deg": "°", "frac_shoulder_w": " w", "frac_back": "%", "score": ""}
 _MINUS = "−"  # typographic minus, not a dash
 
 
@@ -28,6 +28,17 @@ class MetricThreshold(BaseModel):
     higher_is_better: bool = False  # ideal sits at the UPPER edge (e.g. neck stacked = 180)
     lower_is_better: bool = False   # ideal sits at the LOWER edge (e.g. midline deviation = 0)
     basis: str = ""  # why this range is what it is (principled vs needs-literature)
+
+    @property
+    def ideal(self) -> float:
+        """Target value the grading peaks at — same rule as aggregate._graded_frame_score:
+        the favorable edge for directional metrics, else the band centre."""
+        lo, hi = self.acceptable
+        if self.higher_is_better:
+            return hi
+        if self.lower_is_better:
+            return lo
+        return (lo + hi) / 2.0
 
 
 class ThresholdConfig(BaseModel):
@@ -59,7 +70,9 @@ class ThresholdConfig(BaseModel):
         suf = _UNIT_SUFFIX.get(m.unit, "")
 
         def num(v: float) -> str:
-            s = f"{v:.2f}" if m.unit in ("frac_shoulder_w", "frac_back") else f"{v:g}"
+            if m.unit == "frac_back":                      # show as a percentage
+                return f"{v * 100:.0f}"
+            s = f"{v:.2f}" if m.unit == "frac_shoulder_w" else f"{v:g}"
             return s.replace("-", _MINUS)
 
         if m.higher_is_better:

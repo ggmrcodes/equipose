@@ -34,8 +34,8 @@ def test_status_chip_renders_label_and_glyph_not_color_only():
     assert "Good" in g and "✓" in g
     assert "Watch" in y and "◐" in y
     assert "Concern" in r and "▲" in r
-    # distinct status hues present
-    assert "#86CFA0" in g and "#EC8A74" in r
+    # distinct status hues present (palette-agnostic — reads the current status colors)
+    assert ui._STATUS["green"][1] in g and ui._STATUS["red"][1] in r
 
 
 def test_typography_uses_system_san_francisco_stack():
@@ -109,6 +109,17 @@ def test_stepper_is_apple_source_list():
     assert "eq-railv" not in html and "eq-steps" not in html
 
 
+def test_position_scale_marks_score_zones_and_baseline():
+    from equipose.config import load_scoring
+    from equipose.dashboard import ui
+
+    sc = load_scoring()  # yellow_min 60, green_min 80
+    html = ui.position_scale_html(77, "yellow", sc, baseline=62)
+    assert "77" in html and "baseline" in html
+    assert ">60<" in html and ">80<" in html          # zone cutoff ticks
+    assert "baseline" not in ui.position_scale_html(90, "green", sc)   # no prior session
+
+
 def test_toolbar_has_wordmark_and_patient_no_rose():
     from equipose.dashboard import ui
 
@@ -139,19 +150,19 @@ def test_background_field_is_subtle_svg():
     assert s.startswith("<svg") and "opacity=\"0.06\"" in s  # faint, not loud
 
 
-def test_palette_is_monochrome_bone_no_rose():
+def test_palette_is_slate_light_no_rose():
     from equipose.dashboard import ui, glyphs
 
-    # accent is warm bone, the old dusty-rose is gone everywhere
-    assert ui.ACCENT.upper() == "#FBF5EF"
-    assert glyphs.ACCENT.upper() == "#FBF5EF"
+    # accent is slate-blue (the one emphasis tone); the old dusty-rose is gone everywhere
+    assert ui.ACCENT.upper() == "#415A69"
+    assert glyphs.ACCENT.upper() == "#415A69"
     for mod in (ui, glyphs):
         for name in dir(mod):
             val = getattr(mod, name)
             if isinstance(val, str):
                 assert "e08a9b" not in val.lower(), f"rose leak in {mod.__name__}.{name}"
                 assert "eca1b0" not in val.lower(), f"rose-hover leak in {mod.__name__}.{name}"
-    # warm-charcoal base kept
-    assert ui.BG.upper() == "#17120F"
-    # bone buttons use dark ink text for AA contrast
-    assert ui.BTN_INK.upper() == "#17120F"
+    # cool light ground + navy ink; slate buttons use white ink text for AA contrast
+    assert ui.BG.upper() == "#E7EDEF"
+    assert ui.TEXT.upper() == "#0C1013"
+    assert ui.BTN_INK.upper() == "#FFFFFF"
