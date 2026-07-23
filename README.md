@@ -75,8 +75,3 @@ config/                  thresholds.yaml, scoring.yaml  (PLACEHOLDERS)
 docs/                    SETUP_PROTOCOL, ANGLE_DEFINITIONS, PRIVACY
 ```
 
-## Status vs the 60-day plan
-The pipeline is **functionally complete and structurally verified** against
-synthetic data + one real image (golden-frame regression). It does **not** yet
-deliver clinically validated thresholds or measured accuracy on real riders —
-that requires the pilot. See `docs/` and `config/` for what is deferred.
